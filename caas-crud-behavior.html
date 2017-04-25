@@ -114,7 +114,6 @@
         case 'update':
           window.clearTimeout(this._updateDebouncer);
           this._updateDebouncer = window.setTimeout((function() {
-            console.log('poep');
             this.$.updateDocument.generateRequest();
           }).bind(this), this.debounceDuration);
           break;
