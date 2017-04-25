@@ -3,7 +3,8 @@
   "description": "Polymer Crud Behavior Element for Crowdfunding as a Service Solutions",
   "main": "caas-crud-behavior.html",
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.4.0"
+    "polymer": "Polymer/polymer#^1.8.0",
+    "caas-auth-behavior": "CaaSElements/caas-auth-behavior"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
