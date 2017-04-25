@@ -1,4 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../caas-auth-behavior/caas-auth-behavior.html">
 
 <!--
 `caas-crud`
@@ -6,6 +7,8 @@
 
 <script>
   CaasCrudBehavior = {
+
+    behaviors: [CaasAuthBehavior],
 
     properties: {
         
@@ -18,178 +21,122 @@
       },
 
       /**
-      * Exposes the access token (JSON web token) associated with the current session
+      * The server route for the requested document
       */
-      accessToken: {
+      route: {
         type: String,
-        value: null,
-        notify: true
+        value: null          
       },
 
       /**
-      * True while getting all items
+      * If true, `read()` will be called automatically
       */
-      loadingItems: {
+      autoRead: {
+        type: Boolean,
+        value: false
+      },
+
+      /**
+      * If true, `update()` will be called when any value in the `document` object changed.
+      */
+      autoUpdate: {
+        type: Boolean,
+        value: false
+      },
+
+      /**
+      * true if the response of `read()` is pending
+      */
+      reading: {
         type: Boolean,
         value: false,
         notify: true
       },
 
       /**
-      * Determines whether the items should be downloaded automatically
+      * true if the response of `update()` is pending
       */
-      autoDownload: {
+      updating: {
         type: Boolean,
-        value: false
-      },
-
-      /**
-      * Maximum number of downloaded items
-      */
-      limit: {
-        type: Number,
-        value: 100,
+        value: false,
         notify: true
       },
 
       /**
-      * Sort order 'ASC' or 'DESC'
+      * true if the response of `delete()` is pending
       */
-      order: {
-        type: String,
-        value: 'DESC',
+      deleting: {
+        type: Boolean,
+        value: false,
         notify: true
       },
 
       /**
-      * Only show items for 1 particular accountmanager
+      * Determines whether auth headers should be sent along with a CRUD request
       */
-      accountManager: {
-        type: String,
-        value: null
-      },
-
-      /**
-      * Sort items by any of the keys
-      */
-      orderBy: {
-          type: String,
-          value: 'id',
-          notify: true
-      },
-
-      /**
-      * Offset for pagination
-      */
-      offset: {
-        type: Number,
-        value: 0,
-        notify: true
-      },
-
-      /**
-      * List of all available items
-      */
-      items: {
-        type: Array,
-        value: [],
-        computed: '_computeItems(_apiData.*)',
+      auth: {
+        type: Boolean,
+        value: false,
         notify: true
       },
 
       _requestHeaders: {
         type: Object,
-        computed: '_computeRequestHeaders(accessToken)'
+        computed: '_computeRequestHeaders(auth, accessToken, _authHeader)'
       },
 
-      _queryParams: {
-          type: Object,
-          computed: '_computeQueryParams(limit, offset, order, orderBy, searchQuery)'
-      },
-
-      _apiData: {
-        type: Array
+      _readDebouncer: {
+        type: Object
       }
-    
+
     },
 
-    observers: [
-      '_itemsDataChanged(items.*)'
-    ],
-
-    /*
-    * Get All Items
-    */
-    getItems: function() {
-      this.$.getItems.generateRequest();
+    _computeRequestHeaders: function(auth, accessToken, _authHeader) {
+      if(!auth || !accessToken) return {};
+      return _authHeader;
     },
 
-    _computeRequestHeaders: function(accessToken) {
-      return {
-        'Authorization': 'Bearer ' + accessToken
+    _sendAjaxRequest: function(crudOperation) {
+      switch(crudOperation) {
+        case 'read':
+          window.clearTimeout(this._readDebouncer);
+          this._readDebouncer = window.setTimeout((function() {
+            this.$.readDocument.generateRequest();
+          }).bind(this), this.debounceDuration);
+          break;
       }
     },
 
-    _computeQueryParams: function(limit, offset, order, orderBy, searchQuery) {
-      var queryParams = {
-        limit: limit || 100,
-        order: order || 'DESC',
-        orderBy: orderBy || 'id',
-        offset: offset || 0,
-        search: decodeURIComponent(JSON.stringify(searchQuery))
+    _handleReadResponse: function(evt) {
+      this.fire('read');
+    },
+
+    _handleReadResponseError: function(evt) {
+      this.fire('read-error', this._parseErrorObject(evt));
+    },
+
+    _parseErrorObject: function(responseEvent) {
+      var errorObject = {
+        status: responseEvent.detail.request.status,
+        message: responseEvent.detail.request.xhr.response
       }
-      return queryParams;
-    },
+      return errorObject;
+    }
 
-    _computeItems: function(apiDataChange) {
-      var apiData = apiDataChange.base;
-      if(!apiData) return;
-      return apiData.map(this._parseApiDataItemToItem)
-    },
+    /**
+     * Fired when a read response is received.
+     *
+     * @event read
+     */
 
-    _itemsDataChanged: function(changeRecord) {
-      var arrayItemIndex = changeRecord.path.split('.');
-      if (!arrayItemIndex[2]) return;
-      var item = this.get('items.' + arrayItemIndex[1]);
-
-      this.fire('item-updating', item.id);
-      this.$.updateItem.url = this.$.getItems.url + '/' + item.id;
-      this.$.updateItem.body = JSON.stringify(item);
-      this.$.updateItem.generateRequest();
-    },
-
-    _handleUpdateItemResponse: function(evt) {
-      var savedItem = evt.detail.response;
-      var toBeUpdatedArrayIndex = this._getArrayIndexByItemId(savedItem.id);
-      this._updateItemByArrayIndex(savedItem, toBeUpdatedArrayIndex);
-      this.$.updateItem.url = null;
-      this.fire('item-updated', {
-        response: savedItem
-      });
-    },
-
-    _getArrayIndexByItemId: function(id) {
-      for (var i = 0; i < this.items.length; i++) {
-        if(this.items[i].id === id){
-          return this.items.indexOf(this.items[i]);
-        }
-      }
-    },
-
-    _updateItemByArrayIndex: function(updatedItem, arrayIndex) {
-      var updatedItem = this._parseApiDataItemToItem(updatedItem);
-      if (arrayIndex != -1) {
-        return this.splice('items', arrayIndex, 1, updatedItem);
-        }
-      },
-
-    _handleUpdateItemError: function(evt) {
-      this.$.updateItem.url = null;
-      this.fire('item-update-error', {
-        message: evt.detail.error.message,
-        response: evt.detail.response
-      });
-    },
+    /**
+     * Fired when a read error is received.
+     *
+     * @event read-error
+     * @param {Object} error
+     * @param {number} error.status Status Code
+     * @param {Object} error.message Error message
+     */
 
   }
 </script>
