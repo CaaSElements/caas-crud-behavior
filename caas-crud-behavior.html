@@ -86,10 +86,6 @@
 
       _updateDebouncer: {
         type: Object
-      },
-
-      _deleteDebouncer: {
-        type: Object  
       }
     },
 
@@ -118,10 +114,7 @@
           }).bind(this), this.debounceDuration);
           break;
         case 'delete':
-          window.clearTimeout(this._deleteDebouncer);
-          this._deleteDebouncer = window.setTimeout((function() {
-            this.$.deleteDocument.generateRequest();
-          }).bind(this), this.debounceDuration);
+          this.$.deleteDocument.generateRequest();
           break;
       }
     },
