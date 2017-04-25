@@ -1,15 +1,9 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../caas-auth-behavior/caas-auth-behavior.html">
 
-<!--
-`caas-crud`
--->
-
 <script>
   /** @polymerBehavior CaasCrudBehavior */
-  CaasCrudBehavior = {
-
-    behaviors: [CaasAuthBehavior],
+  CaasCrudBehaviorImpl = {
 
     properties: {
         
@@ -204,6 +198,10 @@
      * @param {number} error.status Status Code
      * @param {Object} error.message Error message
      */
-     
-  }
+
+    /** @polymerBehavior */
+    CaasCrudBehavior = [
+      CaasAuthBehavior,
+      CaasCrudBehaviorImpl,
+    ];
 </script>
