@@ -119,6 +119,12 @@
       }
     },
 
+    _getDocumentIdFromAjaxRequest: function (deleteRequest) {
+      var requestUrl = deleteRequest.request.xhr.responseURL || deleteRequest.request.root.url;
+      var id = requestUrl.substr(requestUrl.lastIndexOf('/')+1, requestUrl.length)
+      return id
+    },      
+
     _handleReadResponse: function(evt) {
       this.fire('read');
     },
