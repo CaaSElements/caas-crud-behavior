@@ -87,8 +87,15 @@
 
       _readDebouncer: {
         type: Object
-      }
+      },
 
+      _updateDebouncer: {
+        type: Object
+      },
+
+      _deleteDebouncer: {
+        type: Object  
+      }
     },
 
     _computeRequestHeaders: function(auth, accessToken, _authHeader) {
@@ -104,6 +111,19 @@
             this.$.readDocument.generateRequest();
           }).bind(this), this.debounceDuration);
           break;
+        case 'update':
+          window.clearTimeout(this._updateDebouncer);
+          this._updateDebouncer = window.setTimeout((function() {
+            console.log('poep');
+            this.$.updateDocument.generateRequest();
+          }).bind(this), this.debounceDuration);
+          break;
+        case 'delete':
+          window.clearTimeout(this._deleteDebouncer);
+          this._deleteDebouncer = window.setTimeout((function() {
+            this.$.deleteDocument.generateRequest();
+          }).bind(this), this.debounceDuration);
+          break;
       }
     },
 
@@ -113,6 +133,22 @@
 
     _handleReadResponseError: function(evt) {
       this.fire('read-error', this._parseErrorObject(evt));
+    },
+
+    _handleUpdateResponse: function(evt) {
+      this.fire('updated');
+    },
+
+    _handleUpdateResponseError: function(evt) {
+      this.fire('update-error', this._parseErrorObject(evt));
+    },
+
+    _handleDeleteResponse: function(evt) {
+      this.fire('deleted');
+    },
+
+    _handleDeleteResponseError: function(evt) {
+      this.fire('delete-error', this._parseErrorObject(evt));
     },
 
     _parseErrorObject: function(responseEvent) {
@@ -138,5 +174,35 @@
      * @param {Object} error.message Error message
      */
 
+    /**
+     * Fired when an update response is received.
+     *
+     * @event update
+     */
+
+    /**
+     * Fired when an update error is received.
+     *
+     * @event update-error
+     * @param {Object} error
+     * @param {number} error.status Status Code
+     * @param {Object} error.message Error message
+     */
+
+    /**
+     * Fired when an delete response is received.
+     *
+     * @event delete
+     */
+
+    /**
+     * Fired when a delete error is received.
+     *
+     * @event delete-error
+     * @param {Object} error
+     * @param {number} error.status Status Code
+     * @param {Object} error.message Error message
+     */
+     
   }
 </script>
