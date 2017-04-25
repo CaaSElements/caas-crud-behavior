@@ -94,7 +94,7 @@
       return _authHeader;
     },
 
-    _sendAjaxRequest: function(crudOperation) {
+    _sendAjaxRequest: function(crudOperation, payload) {
       switch(crudOperation) {
         case 'read':
           window.clearTimeout(this._readDebouncer);
