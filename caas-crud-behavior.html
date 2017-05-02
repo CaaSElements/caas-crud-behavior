@@ -85,7 +85,7 @@
 
       _requestHeaders: {
         type: Object,
-        computed: '_computeRequestHeaders(auth, accessToken, _authHeader)'
+        computed: '_computeRequestHeaders(accessToken, _authHeader)'
       },
 
       _readDebouncer: {
@@ -97,8 +97,8 @@
       }
     },
 
-    _computeRequestHeaders: function(auth, accessToken, _authHeader) {
-      if(!auth || !accessToken) return {};
+    _computeRequestHeaders: function(accessToken, _authHeader) {
+      if(!accessToken) return {};
       return _authHeader;
     },
 
